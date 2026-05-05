@@ -1,0 +1,37 @@
+:root {
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --border: #E2E2E2;
+  --text: #1A1A1A;
+  --muted: #6B7280;
+  --accent: #5C7A60;
+  --accent-light: #EEF3EE;
+  --accent-hover: #4A6550;
+  --purchased-bg: #D1FAE5;
+  --purchased-text: #065F46;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
