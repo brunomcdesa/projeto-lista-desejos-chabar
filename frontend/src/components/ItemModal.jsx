@@ -2,178 +2,28 @@ import { useState, useEffect } from 'react';
 
 const CATEGORIES = ['Cozinha', 'Mesa Posta', 'Banheiro', 'Quarto', 'Lavanderia'];
 
-const s = {
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.45)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '1rem',
-    zIndex: 1000,
-  },
-  modal: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 12,
-    padding: '2rem',
-    width: '100%',
-    maxWidth: 520,
-    maxHeight: '90vh',
-    overflowY: 'auto',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1.75rem',
-  },
-  title: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: '1.3rem',
-    color: 'var(--text)',
-  },
-  closeBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: '1.4rem',
-    color: 'var(--muted)',
-    cursor: 'pointer',
-    lineHeight: 1,
-    padding: '0.25rem',
-  },
-  row: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '1rem',
-  },
-  group: {
-    marginBottom: '1.1rem',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.8rem',
-    fontWeight: 600,
-    color: 'var(--muted)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: '0.35rem',
-  },
-  input: {
-    width: '100%',
-    padding: '0.6rem 0.8rem',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: '0.92rem',
-    fontFamily: 'var(--font-sans)',
-    color: 'var(--text)',
-    background: 'var(--bg)',
-    outline: 'none',
-  },
-  select: {
-    width: '100%',
-    padding: '0.6rem 0.8rem',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: '0.92rem',
-    fontFamily: 'var(--font-sans)',
-    color: 'var(--text)',
-    background: 'var(--bg)',
-    outline: 'none',
-    appearance: 'none',
-  },
-  linkRow: {
-    display: 'flex',
-    gap: '0.5rem',
-    marginBottom: '0.5rem',
-    alignItems: 'center',
-  },
-  linkInput: {
-    flex: 1,
-    padding: '0.55rem 0.75rem',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: '0.88rem',
-    fontFamily: 'var(--font-sans)',
-    color: 'var(--text)',
-    background: 'var(--bg)',
-    outline: 'none',
-  },
-  removeLink: {
-    background: 'none',
-    border: '1px solid #fca5a5',
-    borderRadius: 6,
-    color: '#dc2626',
-    fontSize: '0.8rem',
-    padding: '0.35rem 0.6rem',
-    cursor: 'pointer',
-    flexShrink: 0,
-  },
-  addLink: {
-    background: 'none',
-    border: '1px dashed var(--border)',
-    borderRadius: 8,
-    color: 'var(--muted)',
-    fontSize: '0.85rem',
-    padding: '0.5rem 0.9rem',
-    cursor: 'pointer',
-    width: '100%',
-    textAlign: 'left',
-    marginTop: '0.25rem',
-  },
-  divider: {
-    border: 'none',
-    borderTop: '1px solid var(--border)',
-    margin: '1.5rem 0',
-  },
-  actions: {
-    display: 'flex',
-    gap: '0.75rem',
-    justifyContent: 'flex-end',
-  },
-  btnCancel: {
-    padding: '0.65rem 1.25rem',
-    background: 'none',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: '0.9rem',
-    color: 'var(--muted)',
-    cursor: 'pointer',
-  },
-  btnSave: {
-    padding: '0.65rem 1.5rem',
-    background: 'var(--accent)',
-    border: 'none',
-    borderRadius: 8,
-    fontSize: '0.9rem',
-    fontWeight: 600,
-    color: '#fff',
-    cursor: 'pointer',
-  },
-};
-
 const empty = {
   name: '',
-  emoji: '🎁',
   description: '',
   category: CATEGORIES[0],
   quantity: 1,
   purchaseLinks: [],
+  imageUrl: '',
 };
 
-export default function ItemModal({ item, onSave, onClose }) {
+export default function ItemModal({ item, onSave, onClose, onFetchOgImage }) {
   const [form, setForm] = useState(empty);
+  const [imageLoading, setImageLoading] = useState(false);
 
   useEffect(() => {
     if (item) {
       setForm({
         name: item.name,
-        emoji: item.emoji || '🎁',
         description: item.description || '',
         category: item.category,
         quantity: item.quantity ?? 1,
         purchaseLinks: item.purchaseLinks ? [...item.purchaseLinks] : [],
+        imageUrl: item.imageUrl || '',
       });
     } else {
       setForm(empty);
@@ -189,13 +39,17 @@ export default function ItemModal({ item, onSave, onClose }) {
       return { ...f, purchaseLinks: links };
     });
 
-  const addLink = () => setForm((f) => ({ ...f, purchaseLinks: [...f.purchaseLinks, ''] }));
-
+  const addLink  = () => setForm((f) => ({ ...f, purchaseLinks: [...f.purchaseLinks, ''] }));
   const removeLink = (idx) =>
-    setForm((f) => ({
-      ...f,
-      purchaseLinks: f.purchaseLinks.filter((_, i) => i !== idx),
-    }));
+    setForm((f) => ({ ...f, purchaseLinks: f.purchaseLinks.filter((_, i) => i !== idx) }));
+
+  const handleLinkBlur = async (idx, value) => {
+    if (idx !== 0 || !value.startsWith('http') || form.imageUrl) return;
+    setImageLoading(true);
+    const url = await onFetchOgImage?.(value);
+    if (url) set('imageUrl', url);
+    setImageLoading(false);
+  };
 
   const handleSave = () => {
     if (!form.name.trim() || !form.category) return;
@@ -210,40 +64,47 @@ export default function ItemModal({ item, onSave, onClose }) {
   const isEditing = Boolean(item);
 
   return (
-    <div style={s.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div style={s.modal}>
-        <div style={s.header}>
-          <h2 style={s.title}>{isEditing ? 'Editar Item' : 'Novo Item'}</h2>
-          <button style={s.closeBtn} onClick={onClose}>✕</button>
-        </div>
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal gold-top">
+        <div className="modal-title">{isEditing ? 'Editar Presente' : 'Adicionar Presente'}</div>
+        <div className="modal-sub">Preencha os dados do item abaixo.</div>
 
-        <div style={s.row}>
-          <div style={{ ...s.group, gridColumn: '1 / -1' }}>
-            <label style={s.label}>Nome *</label>
+        <div className="modal-grid">
+          <div>
+            <label className="modal-label">Categoria *</label>
+            <select
+              className="modal-input"
+              value={form.category}
+              onChange={(e) => set('category', e.target.value)}
+              style={{ appearance: 'auto' }}
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="modal-full">
+            <label className="modal-label">Nome do presente *</label>
             <input
-              style={s.input}
+              className="modal-input"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               placeholder="Ex: Jogo de Panelas"
             />
           </div>
-        </div>
-
-        <div style={s.row}>
-          <div style={s.group}>
-            <label style={s.label}>Emoji</label>
+          <div className="modal-full">
+            <label className="modal-label">Descrição curta</label>
             <input
-              style={s.input}
-              value={form.emoji}
-              onChange={(e) => set('emoji', e.target.value)}
-              placeholder="🎁"
-              maxLength={4}
+              className="modal-input"
+              value={form.description}
+              onChange={(e) => set('description', e.target.value)}
+              placeholder="Marca, detalhes…"
             />
           </div>
-          <div style={s.group}>
-            <label style={s.label}>Quantidade desejada</label>
+          <div>
+            <label className="modal-label">Quantidade desejada</label>
             <input
-              style={s.input}
+              className="modal-input"
               type="number"
               min="1"
               value={form.quantity}
@@ -252,54 +113,54 @@ export default function ItemModal({ item, onSave, onClose }) {
           </div>
         </div>
 
-        <div style={s.group}>
-          <label style={s.label}>Categoria *</label>
-          <select
-            style={s.select}
-            value={form.category}
-            onChange={(e) => set('category', e.target.value)}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        <div style={s.group}>
-          <label style={s.label}>Descrição</label>
-          <input
-            style={s.input}
-            value={form.description}
-            onChange={(e) => set('description', e.target.value)}
-            placeholder="Ex: Kit com 5 a 7 peças"
-          />
-        </div>
-
-        <hr style={s.divider} />
-
-        <div style={s.group}>
-          <label style={s.label}>Links de compra</label>
+        <div style={{ marginTop: 16 }}>
+          <label className="modal-label">
+            Links de compra <span style={{ color: 'var(--gray)', fontWeight: 400 }}>(opcional)</span>
+          </label>
           {form.purchaseLinks.map((link, idx) => (
-            <div key={idx} style={s.linkRow}>
+            <div key={idx} className="link-row" style={{ marginBottom: 8 }}>
               <input
-                style={s.linkInput}
+                className="modal-input"
                 value={link}
                 onChange={(e) => setLink(idx, e.target.value)}
+                onBlur={(e) => handleLinkBlur(idx, e.target.value)}
                 placeholder="https://..."
                 type="url"
               />
-              <button style={s.removeLink} onClick={() => removeLink(idx)}>
-                Remover
-              </button>
+              <button className="btn-link-remove" onClick={() => removeLink(idx)}>✕</button>
             </div>
           ))}
-          <button style={s.addLink} onClick={addLink}>+ Adicionar link</button>
+          <button className="btn-link-add" onClick={addLink}>+ Adicionar link</button>
         </div>
 
-        <div style={s.actions}>
-          <button style={s.btnCancel} onClick={onClose}>Cancelar</button>
-          <button style={s.btnSave} onClick={handleSave} disabled={!form.name.trim()}>
-            {isEditing ? 'Salvar alterações' : 'Criar item'}
+        <div style={{ marginTop: 16 }}>
+          <label className="modal-label">
+            Imagem do produto{' '}
+            <span style={{ color: 'var(--gray)', fontWeight: 400 }}>(opcional — preenchida automaticamente)</span>
+          </label>
+          <input
+            className="modal-input"
+            value={form.imageUrl}
+            onChange={(e) => set('imageUrl', e.target.value)}
+            placeholder="https://... (deixe vazio para buscar automaticamente)"
+            type="url"
+          />
+          {imageLoading && (
+            <div style={{ marginTop: 8, fontSize: 13, color: 'var(--sage)' }}>Buscando imagem…</div>
+          )}
+          {form.imageUrl && !imageLoading && (
+            <img
+              src={form.imageUrl}
+              alt="Preview"
+              style={{ marginTop: 8, width: 80, height: 80, objectFit: 'cover', borderRadius: 8, display: 'block' }}
+            />
+          )}
+        </div>
+
+        <div className="modal-actions">
+          <button className="btn-modal-cancel" onClick={onClose}>Cancelar</button>
+          <button className="btn-modal-save" onClick={handleSave} disabled={!form.name.trim()}>
+            {isEditing ? 'Salvar Alterações' : 'Adicionar'}
           </button>
         </div>
       </div>

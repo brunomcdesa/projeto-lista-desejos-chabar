@@ -1,321 +1,198 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const NOME1 = 'Bruno';
 const NOME2 = 'Carol';
-const DATA_EVENTO = 'DD de Mês de AAAA';
+const DATA_EVENTO = 'Sábado, 14 de Junho de 2025';
+const HORA_EVENTO = '16h às 20h';
+const LOCAL_EVENTO = 'Rua das Flores, 123 — Jardins, SP';
 
-const s = {
-  page: {
-    minHeight: '100vh',
-    background: 'var(--bg)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '2rem 1.25rem',
-  },
-  card: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 16,
-    padding: '2.5rem 2rem',
-    maxWidth: 460,
-    width: '100%',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  accentBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 4,
-    background: 'var(--accent)',
-  },
-  eyebrow: {
-    fontSize: '0.72rem',
-    fontWeight: 600,
-    letterSpacing: '0.18em',
-    textTransform: 'uppercase',
-    color: 'var(--accent)',
-    marginBottom: '0.5rem',
-    textAlign: 'center',
-  },
-  title: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: 'clamp(1.8rem, 5vw, 2.5rem)',
-    fontWeight: 500,
-    color: 'var(--text)',
-    textAlign: 'center',
-    lineHeight: 1.2,
-    marginBottom: '0.4rem',
-  },
-  subtitle: {
-    fontSize: '0.85rem',
-    color: 'var(--muted)',
-    textAlign: 'center',
-    marginBottom: '0.5rem',
-    letterSpacing: '0.05em',
-  },
-  intro: {
-    fontSize: '0.88rem',
-    color: 'var(--muted)',
-    textAlign: 'center',
-    lineHeight: 1.65,
-    marginBottom: '1.75rem',
-  },
-  divider: {
-    border: 'none',
-    borderTop: '1px solid var(--border)',
-    margin: '0 0 1.5rem',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.78rem',
-    fontWeight: 600,
-    color: 'var(--muted)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: '0.35rem',
-  },
-  group: { marginBottom: '1rem' },
-  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' },
-  input: {
-    width: '100%',
-    padding: '0.65rem 0.9rem',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: '0.95rem',
-    fontFamily: 'var(--font-sans)',
-    color: 'var(--text)',
-    background: 'var(--bg)',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  select: {
-    width: '100%',
-    padding: '0.65rem 0.9rem',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: '0.95rem',
-    fontFamily: 'var(--font-sans)',
-    color: 'var(--text)',
-    background: 'var(--bg)',
-    outline: 'none',
-    appearance: 'none',
-    boxSizing: 'border-box',
-  },
-  textarea: {
-    width: '100%',
-    padding: '0.65rem 0.9rem',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: '0.95rem',
-    fontFamily: 'var(--font-sans)',
-    color: 'var(--text)',
-    background: 'var(--bg)',
-    outline: 'none',
-    resize: 'vertical',
-    minHeight: 72,
-    boxSizing: 'border-box',
-  },
-  error: {
-    fontSize: '0.82rem',
-    color: '#dc2626',
-    marginBottom: '1rem',
-    padding: '0.5rem 0.75rem',
-    background: '#fef2f2',
-    borderRadius: 6,
-    border: '1px solid #fca5a5',
-  },
-  btnSubmit: {
-    width: '100%',
-    padding: '0.9rem',
-    background: 'var(--accent)',
-    border: 'none',
-    borderRadius: 10,
-    fontSize: '1rem',
-    fontWeight: 600,
-    color: '#fff',
-    cursor: 'pointer',
-    marginTop: '0.25rem',
-    fontFamily: 'var(--font-sans)',
-  },
-  skipBtn: {
-    display: 'block',
-    width: '100%',
-    textAlign: 'center',
-    marginTop: '1rem',
-    fontSize: '0.82rem',
-    color: 'var(--muted)',
-    cursor: 'pointer',
-    background: 'none',
-    border: 'none',
-    fontFamily: 'var(--font-sans)',
-    padding: '0.25rem',
-    textDecoration: 'underline',
-  },
-  successWrap: { textAlign: 'center', padding: '0.5rem 0' },
-  successIcon: { fontSize: '3.5rem', marginBottom: '1rem', display: 'block' },
-  successTitle: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: '1.5rem',
-    color: 'var(--text)',
-    marginBottom: '0.5rem',
-  },
-  successText: {
-    fontSize: '0.9rem',
-    color: 'var(--muted)',
-    lineHeight: 1.65,
-    marginBottom: '1.5rem',
-  },
-  btnGifts: {
-    display: 'inline-block',
-    padding: '0.75rem 2rem',
-    background: 'var(--accent)',
-    border: 'none',
-    borderRadius: 10,
-    fontSize: '0.95rem',
-    fontWeight: 600,
-    color: '#fff',
-    cursor: 'pointer',
-    fontFamily: 'var(--font-sans)',
-  },
-};
+const Sprig = () => (
+  <svg width="110" height="160" viewBox="0 0 110 160" fill="none">
+    <path d="M58 155 C56 120 52 88 44 58" stroke="#7D9E8C" strokeWidth="1.8" strokeLinecap="round"/>
+    <path d="M47 105 C30 96 22 80 28 72 C37 79 43 92 47 105Z" fill="#7D9E8C" fillOpacity="0.18" stroke="#7D9E8C" strokeWidth="1.1" strokeLinejoin="round"/>
+    <path d="M47 105 C64 96 70 80 64 72 C55 79 50 92 47 105Z" fill="#7D9E8C" fillOpacity="0.13" stroke="#7D9E8C" strokeWidth="1.1" strokeLinejoin="round"/>
+    <path d="M45 79 C28 70 21 54 27 46 C36 53 41 66 45 79Z" fill="#7D9E8C" fillOpacity="0.16" stroke="#7D9E8C" strokeWidth="1.1" strokeLinejoin="round"/>
+    <path d="M45 79 C62 70 67 54 61 46 C52 53 47 66 45 79Z" fill="#7D9E8C" fillOpacity="0.11" stroke="#7D9E8C" strokeWidth="1.1" strokeLinejoin="round"/>
+    <path d="M44 55 C29 46 23 30 30 22 C38 29 42 42 44 55Z" fill="#7D9E8C" fillOpacity="0.12" stroke="#7D9E8C" strokeWidth="1" strokeLinejoin="round"/>
+    <path d="M44 55 C59 46 63 30 56 22 C48 29 45 42 44 55Z" fill="#7D9E8C" fillOpacity="0.09" stroke="#7D9E8C" strokeWidth="1" strokeLinejoin="round"/>
+    <circle cx="44" cy="22" r="2.8" fill="#C9A84C" fillOpacity="0.72"/>
+    <circle cx="37" cy="17" r="2" fill="#C9A84C" fillOpacity="0.5"/>
+    <circle cx="51" cy="16" r="1.8" fill="#C9A84C" fillOpacity="0.45"/>
+  </svg>
+);
+
+const GoldDivider = () => (
+  <div className="divider-gold">
+    <div className="line" /><div className="dot">◆ ◆ ◆</div><div className="line" />
+  </div>
+);
+
+function SuccessScreen({ name }) {
+  return (
+    <div className="success-screen">
+      <div className="success-circle">
+        <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
+          <path
+            className="success-check"
+            d="M11 21 L18 28 L31 14"
+            stroke="white" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      <h2 className="success-title">Presença confirmada!</h2>
+      <p className="success-sub">
+        Que alegria, <strong>{name.split(' ')[0] || name}</strong>!<br />
+        Preparando a lista de presentes…
+      </p>
+    </div>
+  );
+}
 
 export default function RsvpScreen({ onConfirmed }) {
-  const [form, setForm] = useState({ name: '', phone: '', companions: '0', message: '' });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [name, setName]             = useState('');
+  const [companions, setCompanions] = useState(0);
+  const [compNames, setCompNames]   = useState([]);
+  const [message, setMessage]       = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [nameErr, setNameErr]       = useState('');
+  const [success, setSuccess]       = useState(false);
 
-  const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+  const changeCompanions = (delta) => {
+    setCompanions((c) => {
+      const next = Math.max(0, c + delta);
+      setCompNames((prev) => {
+        if (next > prev.length) return [...prev, ...Array(next - prev.length).fill('')];
+        return prev.slice(0, next);
+      });
+      return next;
+    });
+  };
+
+  const setCompNameAt = (idx, val) => {
+    setCompNames((prev) => { const n = [...prev]; n[idx] = val; return n; });
+  };
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { setError('Por favor, informe seu nome.'); return; }
-    setError('');
+    if (!name.trim()) { setNameErr('Por favor, informe seu nome.'); return; }
+    setNameErr('');
     setLoading(true);
     try {
       const res = await fetch('/api/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, companions: Number(form.companions) }),
+        body: JSON.stringify({ name: name.trim(), companions, compNames, message }),
       });
       if (res.ok || res.status === 409) {
-        localStorage.setItem('chabar_rsvp', JSON.stringify({ name: form.name.trim(), confirmedAt: new Date().toISOString() }));
+        localStorage.setItem('chabar_rsvp', JSON.stringify({ name: name.trim(), confirmedAt: new Date().toISOString() }));
         setSuccess(true);
+        setTimeout(() => onConfirmed(name.trim()), 2300);
       } else {
-        setError('Ocorreu um erro. Tente novamente.');
+        setNameErr('Ocorreu um erro. Tente novamente.');
       }
     } catch {
-      setError('Ocorreu um erro. Verifique sua conexão e tente novamente.');
+      setNameErr('Ocorreu um erro. Verifique sua conexão e tente novamente.');
     }
     setLoading(false);
   };
 
-  const handleGoToGifts = () => {
-    const stored = localStorage.getItem('chabar_rsvp');
-    const name = stored ? JSON.parse(stored).name : form.name.trim() || '';
-    onConfirmed(name);
-  };
+  if (success) return <SuccessScreen name={name} />;
 
-  const handleSkip = () => {
-    localStorage.setItem('chabar_rsvp', JSON.stringify({ name: '', confirmedAt: new Date().toISOString() }));
-    onConfirmed('');
-  };
+  const compLabel =
+    companions === 0 ? 'sem acompanhante' :
+    companions === 1 ? 'acompanhante' :
+    'acompanhantes';
 
   return (
-    <div style={s.page}>
-      <div style={s.card}>
-        <div style={s.accentBar} />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div className="hero gold-top">
+        <div className="hero-bot-left"><Sprig /></div>
+        <div className="hero-bot-right"><Sprig /></div>
+        <div className="event-tag">Você está convidado/a</div>
+        <h1 className="hero-title">Chá de Casa Nova</h1>
+        <p className="hero-names">de {NOME1} &amp; {NOME2}</p>
+        <div className="hero-rule" />
+        <div className="hero-details">
+          <span className="hero-detail">📅 {DATA_EVENTO} · {HORA_EVENTO}</span>
+          <span className="hero-detail">📍 {LOCAL_EVENTO}</span>
+        </div>
+      </div>
 
-        {success ? (
-          <div style={s.successWrap}>
-            <span style={s.successIcon}>🎉</span>
-            <p style={s.successTitle}>Presença confirmada!</p>
-            <p style={s.successText}>
-              Obrigado, <strong>{form.name.trim()}</strong>! Ficamos felizes em ter você com a gente.<br />
-              Agora veja nossa lista de presentes!
-            </p>
-            <button style={s.btnGifts} onClick={handleGoToGifts}>
-              Ver lista de presentes →
-            </button>
+      <div className="form-section">
+        <p className="form-intro">
+          Confirme sua presença abaixo e explore nossa lista de presentes 🏡
+        </p>
+        <div className="form-card">
+          <GoldDivider />
+
+          <div className="form-field">
+            <label className="form-label">
+              Nome completo <span className="req">*</span>
+            </label>
+            <input
+              type="text"
+              className={`field-input${nameErr ? ' error' : ''}`}
+              value={name}
+              onChange={(e) => { setName(e.target.value); setNameErr(''); }}
+              placeholder="Como prefere ser chamado/a"
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+            />
+            {nameErr && <span className="field-err">{nameErr}</span>}
           </div>
-        ) : (
-          <>
-            <p style={s.eyebrow}>Chá Bar · Confirmação de Presença</p>
-            <h1 style={s.title}>{NOME1} &amp; {NOME2}</h1>
-            <p style={s.subtitle}>{DATA_EVENTO}</p>
-            <p style={s.intro}>
-              Sua presença é o nosso maior presente.<br />
-              Confirme abaixo para que possamos te aguardar!
-            </p>
 
-            <hr style={s.divider} />
-
-            {error && <p style={s.error}>{error}</p>}
-
-            <div style={s.group}>
-              <label style={s.label}>Seu nome *</label>
-              <input
-                style={s.input}
-                value={form.name}
-                onChange={(e) => set('name', e.target.value)}
-                placeholder="Como devemos te chamar?"
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              />
+          <div className="form-field">
+            <label className="form-label">
+              Acompanhantes <span className="opt">(adultos + crianças)</span>
+            </label>
+            <div className="stepper">
+              <button className="step-btn" onClick={() => changeCompanions(-1)} disabled={companions === 0}>−</button>
+              <span className="step-val">{companions}</span>
+              <button className="step-btn" onClick={() => changeCompanions(+1)}>+</button>
+              <span className="step-label">{compLabel}</span>
             </div>
+          </div>
 
-            <div style={s.row}>
-              <div>
-                <label style={s.label}>WhatsApp</label>
-                <input
-                  style={s.input}
-                  value={form.phone}
-                  onChange={(e) => set('phone', e.target.value)}
-                  placeholder="(11) 99999-9999"
-                  type="tel"
-                />
-              </div>
-              <div>
-                <label style={s.label}>Acompanhantes</label>
-                <select
-                  style={s.select}
-                  value={form.companions}
-                  onChange={(e) => set('companions', e.target.value)}
-                >
-                  {[0,1,2,3,4,5,6,7,8,9].map((n) => (
-                    <option key={n} value={n}>
-                      {n === 0 ? 'Só eu' : n === 1 ? '1 pessoa' : `${n} pessoas`}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {companions > 0 && (
+            <div className="comp-names">
+              <label className="form-label" style={{ marginBottom: 2 }}>
+                Nome dos acompanhantes{' '}
+                <span className="opt">(para {NOME1} e {NOME2} saberem quem virá)</span>
+              </label>
+              {compNames.map((cn, i) => (
+                <div key={i} className="comp-row">
+                  <span className="comp-idx">{i + 1}</span>
+                  <input
+                    type="text"
+                    className="field-input"
+                    value={cn}
+                    onChange={(e) => setCompNameAt(i, e.target.value)}
+                    placeholder={`Acompanhante ${i + 1}`}
+                  />
+                </div>
+              ))}
             </div>
+          )}
 
-            <div style={s.group}>
-              <label style={s.label}>Mensagem (opcional)</label>
-              <textarea
-                style={s.textarea}
-                value={form.message}
-                onChange={(e) => set('message', e.target.value)}
-                placeholder="Deixe um recado para os noivos..."
-              />
-            </div>
+          <div className="form-field">
+            <label className="form-label">Mensagem <span className="opt">(opcional)</span></label>
+            <textarea
+              className="field-input"
+              value={message}
+              rows={3}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={`Uma palavrinha pra ${NOME1} e ${NOME2}…`}
+            />
+          </div>
 
-            <button
-              style={{ ...s.btnSubmit, opacity: loading ? 0.7 : 1 }}
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? 'Confirmando...' : 'Confirmar presença'}
-            </button>
+          <GoldDivider />
 
-            <button style={s.skipBtn} onClick={handleSkip}>
-              Já confirmei, quero ver a lista de presentes →
-            </button>
-          </>
-        )}
+          <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
+            {loading ? <><div className="spinner" />&nbsp;Confirmando…</> : 'Confirmar Presença'}
+          </button>
+        </div>
+      </div>
+
+      <div className="admin-link">
+        <a href="?admin">Área do organizador →</a>
       </div>
     </div>
   );

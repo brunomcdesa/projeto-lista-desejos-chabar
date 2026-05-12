@@ -68,6 +68,7 @@ function migrate(items) {
     const patch = {};
     if (item.quantity === undefined) { patch.quantity = 1; changed = true; }
     if (item.purchaseLinks === undefined) { patch.purchaseLinks = []; changed = true; }
+    if (item.imageUrl === undefined) { patch.imageUrl = null; changed = true; }
     if (item.quantityReceived === undefined) {
       patch.quantityReceived = item.purchased ? (item.quantity ?? 1) : 0;
       changed = true;
@@ -122,6 +123,7 @@ function create(data) {
     category: data.category,
     quantity: data.quantity ?? 1,
     purchaseLinks: Array.isArray(data.purchaseLinks) ? data.purchaseLinks : [],
+    imageUrl: data.imageUrl || null,
     quantityReceived: 0,
     purchased: false,
   };
@@ -134,7 +136,7 @@ function update(id, data) {
   const items = load();
   const idx = items.findIndex((i) => i.id === id);
   if (idx === -1) return null;
-  const fields = ['name', 'emoji', 'description', 'category', 'quantity', 'quantityReceived', 'purchaseLinks'];
+  const fields = ['name', 'emoji', 'description', 'category', 'quantity', 'quantityReceived', 'purchaseLinks', 'imageUrl'];
   fields.forEach((f) => { if (data[f] !== undefined) items[idx][f] = data[f]; });
   items[idx].purchased = (items[idx].quantityReceived ?? 0) >= (items[idx].quantity ?? 1);
   save(items);
@@ -161,7 +163,17 @@ function saveGuests(guests) {
 }
 
 function getAllGuests() {
-  return loadGuests();
+  return migrateGuests(loadGuests());
+}
+
+function migrateGuests(guests) {
+  let changed = false;
+  const result = guests.map((g) => {
+    if (g.compNames === undefined) { changed = true; return { ...g, compNames: [] }; }
+    return g;
+  });
+  if (changed) saveGuests(result);
+  return result;
 }
 
 function addGuest(data) {
@@ -177,6 +189,7 @@ function addGuest(data) {
     name: data.name.trim(),
     phone,
     companions: Math.max(0, Number(data.companions) || 0),
+    compNames: Array.isArray(data.compNames) ? data.compNames.filter(Boolean) : [],
     message: data.message?.trim() || '',
     confirmedAt: new Date().toISOString(),
   };
@@ -185,4 +198,4 @@ function addGuest(data) {
   return { duplicate: false, guest };
 }
 
-module.exports = { init, getAll, toggle, create, update, remove, getAllGuests, addGuest };
+module.exports = { init, getAll, toggle, create, update, remove, getAllGuests, addGuest, migrateGuests };

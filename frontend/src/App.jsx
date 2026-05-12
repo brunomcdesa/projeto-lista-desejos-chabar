@@ -8,6 +8,16 @@ import RsvpScreen from './components/RsvpScreen.jsx';
 
 const CATEGORIES = ['Todos', 'Cozinha', 'Mesa Posta', 'Banheiro', 'Quarto', 'Lavanderia'];
 
+function Toast({ msg, onDone }) {
+  const [out, setOut] = useState(false);
+  useEffect(() => {
+    const t1 = setTimeout(() => setOut(true), 1800);
+    const t2 = setTimeout(onDone, 2100);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+  return <div className={`toast${out ? ' out' : ''}`}>{msg}</div>;
+}
+
 function useAdminMode() {
   const isAdminRoute = window.location.search.includes('admin');
   const [adminPassword, setAdminPassword] = useState(() => {
@@ -37,12 +47,14 @@ function getStoredRsvp() {
 export default function App() {
   const { isAdminRoute, adminPassword, login, logout } = useAdminMode();
 
-  const [view, setView] = useState(() => (getStoredRsvp() ? 'gifts' : 'rsvp'));
+  const [view, setView]           = useState(() => (getStoredRsvp() ? 'gifts' : 'rsvp'));
   const [guestName, setGuestName] = useState(() => getStoredRsvp()?.name || '');
 
-  const [items, setItems] = useState([]);
+  const [items, setItems]                 = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]             = useState(true);
+  const [byMe, setByMe]                   = useState(() => new Set());
+  const [toast, setToast]                 = useState(null);
 
   useEffect(() => {
     if (isAdminRoute) return;
@@ -55,10 +67,22 @@ export default function App() {
   }, [isAdminRoute, view]);
 
   const handleToggle = async (id) => {
+    const wasReservedByMe = byMe.has(id);
     const res = await fetch(`/api/items/${id}/toggle`, { method: 'PATCH' });
     if (!res.ok) return;
     const updated = await res.json();
-    setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+    const item = items.find((i) => i.id === id);
+    setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+    setByMe((prev) => {
+      const next = new Set(prev);
+      wasReservedByMe ? next.delete(id) : next.add(id);
+      return next;
+    });
+    setToast(
+      wasReservedByMe
+        ? `Reserva de "${item?.name}" cancelada.`
+        : `🎁 "${item?.name}" reservado!`
+    );
   };
 
   const filtered = useMemo(
@@ -95,22 +119,23 @@ export default function App() {
   }
 
   return (
-    <>
+    <div className="gifts-screen">
       <Hero total={totalQuantity} purchased={totalReceived} guestName={guestName} />
-      <main style={{ maxWidth: 760, margin: '0 auto', padding: '0 1.25rem 4rem' }}>
-        <CategoryFilter
-          categories={CATEGORIES}
-          selected={selectedCategory}
-          onSelect={setSelectedCategory}
-        />
+      <CategoryFilter
+        categories={CATEGORIES}
+        selected={selectedCategory}
+        onSelect={setSelectedCategory}
+      />
+      <div className="gifts-wrap">
         {loading ? (
           <p style={{ color: 'var(--muted)', textAlign: 'center', marginTop: '3rem' }}>
             Carregando lista...
           </p>
         ) : (
-          <GiftList items={filtered} onToggle={handleToggle} />
+          <GiftList items={filtered} byMe={byMe} onToggle={handleToggle} />
         )}
-      </main>
-    </>
+      </div>
+      {toast && <Toast key={toast} msg={toast} onDone={() => setToast(null)} />}
+    </div>
   );
 }
