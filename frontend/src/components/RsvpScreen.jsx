@@ -4,7 +4,7 @@ const NOME1 = 'Bruno';
 const NOME2 = 'Carol';
 const DATA_EVENTO = 'Sábado, 05 de Setembro de 2026';
 const HORA_EVENTO = '14h às 22h';
-const LOCAL_EVENTO = 'Rua das Flores, 123 — Jardins, SP';
+const LOCAL_EVENTO = 'Rua Bélgica, 947 — Igapó';
 
 const Sprig = () => (
   <svg width="110" height="160" viewBox="0 0 110 160" fill="none">
