@@ -54,7 +54,7 @@ The project is split into two independent npm workspaces managed from the root v
 
 **Item data model:**
 ```
-{ id, name, emoji, description, category, quantity, quantityReceived, purchased, purchaseLinks[] }
+{ id, name, description, category, quantity, quantityReceived, purchased }
 ```
 `purchased` is derived (`quantityReceived >= quantity`) and recalculated on every write.
 

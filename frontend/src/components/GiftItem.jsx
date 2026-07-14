@@ -34,10 +34,6 @@ export default function GiftItem({ item, isMine, onToggle }) {
       {soldOut && !isMine && <div className="stamp">Esgotado</div>}
       {isMine && <div className="mine-badge">✓ Meu</div>}
 
-      {item.imageUrl && (
-        <img className="card-img" src={item.imageUrl} alt={item.name} />
-      )}
-
       <div>
         <div className="card-name">{item.name}</div>
         {item.description && <div className="card-desc" style={{ marginTop: 3 }}>{item.description}</div>}
@@ -59,17 +55,6 @@ export default function GiftItem({ item, isMine, onToggle }) {
       >
         {loading ? '…' : btnLabel}
       </button>
-
-      {item.purchaseLinks?.length > 0 && item.purchaseLinks[0] && (
-        <a
-          className="card-link"
-          href={item.purchaseLinks[0]}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          🔗 Onde comprar
-        </a>
-      )}
     </div>
   );
 }

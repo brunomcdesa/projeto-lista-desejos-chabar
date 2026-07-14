@@ -24,15 +24,6 @@ export default function AdminPanel({ adminPassword, onLogout }) {
 
   const headers = { 'Content-Type': 'application/json', 'x-admin-password': adminPassword };
 
-  const fetchOgImage = async (url) => {
-    try {
-      const res = await fetch(`/api/og-image?url=${encodeURIComponent(url)}`, { headers });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.imageUrl;
-    } catch { return null; }
-  };
-
   const loadItems = () => {
     setLoading(true);
     fetch('/api/items').then((r) => r.json()).then(setItems).finally(() => setLoading(false));
@@ -165,9 +156,6 @@ export default function AdminPanel({ adminPassword, onLogout }) {
                   'var(--gray-light)';
                 return (
                   <div key={item.id} className="gift-item">
-                    {item.imageUrl && (
-                      <img className="gift-item-img" src={item.imageUrl} alt={item.name} />
-                    )}
                     <div className="gift-item-info">
                       <div className="gift-item-name">{item.name}</div>
                       {item.description && <div className="gift-item-desc">{item.description}</div>}
@@ -258,7 +246,7 @@ export default function AdminPanel({ adminPassword, onLogout }) {
 
       {/* Item modal */}
       {modalOpen && (
-        <ItemModal item={modalItem} onSave={handleSave} onClose={closeModal} onFetchOgImage={fetchOgImage} />
+        <ItemModal item={modalItem} onSave={handleSave} onClose={closeModal} />
       )}
 
       {/* Delete confirm */}

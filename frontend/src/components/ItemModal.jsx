@@ -7,13 +7,10 @@ const empty = {
   description: '',
   category: CATEGORIES[0],
   quantity: 1,
-  purchaseLinks: [],
-  imageUrl: '',
 };
 
-export default function ItemModal({ item, onSave, onClose, onFetchOgImage }) {
+export default function ItemModal({ item, onSave, onClose }) {
   const [form, setForm] = useState(empty);
-  const [imageLoading, setImageLoading] = useState(false);
 
   useEffect(() => {
     if (item) {
@@ -22,8 +19,6 @@ export default function ItemModal({ item, onSave, onClose, onFetchOgImage }) {
         description: item.description || '',
         category: item.category,
         quantity: item.quantity ?? 1,
-        purchaseLinks: item.purchaseLinks ? [...item.purchaseLinks] : [],
-        imageUrl: item.imageUrl || '',
       });
     } else {
       setForm(empty);
@@ -32,32 +27,12 @@ export default function ItemModal({ item, onSave, onClose, onFetchOgImage }) {
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
-  const setLink = (idx, value) =>
-    setForm((f) => {
-      const links = [...f.purchaseLinks];
-      links[idx] = value;
-      return { ...f, purchaseLinks: links };
-    });
-
-  const addLink  = () => setForm((f) => ({ ...f, purchaseLinks: [...f.purchaseLinks, ''] }));
-  const removeLink = (idx) =>
-    setForm((f) => ({ ...f, purchaseLinks: f.purchaseLinks.filter((_, i) => i !== idx) }));
-
-  const handleLinkBlur = async (idx, value) => {
-    if (idx !== 0 || !value.startsWith('http') || form.imageUrl) return;
-    setImageLoading(true);
-    const url = await onFetchOgImage?.(value);
-    if (url) set('imageUrl', url);
-    setImageLoading(false);
-  };
-
   const handleSave = () => {
     if (!form.name.trim() || !form.category) return;
     onSave({
       ...form,
       name: form.name.trim(),
       quantity: Number(form.quantity) || 1,
-      purchaseLinks: form.purchaseLinks.map((l) => l.trim()).filter(Boolean),
     });
   };
 
@@ -111,50 +86,6 @@ export default function ItemModal({ item, onSave, onClose, onFetchOgImage }) {
               onChange={(e) => set('quantity', e.target.value)}
             />
           </div>
-        </div>
-
-        <div style={{ marginTop: 16 }}>
-          <label className="modal-label">
-            Links de compra <span style={{ color: 'var(--gray)', fontWeight: 400 }}>(opcional)</span>
-          </label>
-          {form.purchaseLinks.map((link, idx) => (
-            <div key={idx} className="link-row" style={{ marginBottom: 8 }}>
-              <input
-                className="modal-input"
-                value={link}
-                onChange={(e) => setLink(idx, e.target.value)}
-                onBlur={(e) => handleLinkBlur(idx, e.target.value)}
-                placeholder="https://..."
-                type="url"
-              />
-              <button className="btn-link-remove" onClick={() => removeLink(idx)}>✕</button>
-            </div>
-          ))}
-          <button className="btn-link-add" onClick={addLink}>+ Adicionar link</button>
-        </div>
-
-        <div style={{ marginTop: 16 }}>
-          <label className="modal-label">
-            Imagem do produto{' '}
-            <span style={{ color: 'var(--gray)', fontWeight: 400 }}>(opcional — preenchida automaticamente)</span>
-          </label>
-          <input
-            className="modal-input"
-            value={form.imageUrl}
-            onChange={(e) => set('imageUrl', e.target.value)}
-            placeholder="https://... (deixe vazio para buscar automaticamente)"
-            type="url"
-          />
-          {imageLoading && (
-            <div style={{ marginTop: 8, fontSize: 13, color: 'var(--sage)' }}>Buscando imagem…</div>
-          )}
-          {form.imageUrl && !imageLoading && (
-            <img
-              src={form.imageUrl}
-              alt="Preview"
-              style={{ marginTop: 8, width: 80, height: 80, objectFit: 'cover', borderRadius: 8, display: 'block' }}
-            />
-          )}
         </div>
 
         <div className="modal-actions">

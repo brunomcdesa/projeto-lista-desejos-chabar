@@ -19,20 +19,26 @@ function Toast({ msg, onDone }) {
 }
 
 function useAdminMode() {
-  const isAdminRoute = window.location.search.includes('admin');
+  const [isAdminRoute, setIsAdminRoute] = useState(() =>
+    window.location.search.includes('admin')
+  );
   const [adminPassword, setAdminPassword] = useState(() => {
-    if (!isAdminRoute) return null;
+    if (!window.location.search.includes('admin')) return null;
     return sessionStorage.getItem('adminPassword') || null;
   });
 
   const login = (pw) => setAdminPassword(pw);
+  const exitAdmin = () => {
+    window.history.replaceState({}, '', window.location.pathname);
+    setIsAdminRoute(false);
+  };
   const logout = () => {
     sessionStorage.removeItem('adminPassword');
     setAdminPassword(null);
-    window.history.replaceState({}, '', window.location.pathname);
+    exitAdmin();
   };
 
-  return { isAdminRoute, adminPassword, login, logout };
+  return { isAdminRoute, adminPassword, login, logout, exitAdmin };
 }
 
 function getStoredRsvp() {
@@ -45,7 +51,7 @@ function getStoredRsvp() {
 }
 
 export default function App() {
-  const { isAdminRoute, adminPassword, login, logout } = useAdminMode();
+  const { isAdminRoute, adminPassword, login, logout, exitAdmin } = useAdminMode();
 
   const [view, setView]           = useState(() => (getStoredRsvp() ? 'gifts' : 'rsvp'));
   const [guestName, setGuestName] = useState(() => getStoredRsvp()?.name || '');
@@ -103,10 +109,7 @@ export default function App() {
 
   if (isAdminRoute && !adminPassword) {
     return (
-      <AdminLogin
-        onLogin={login}
-        onBack={() => window.history.replaceState({}, '', window.location.pathname)}
-      />
+      <AdminLogin onLogin={login} onBack={exitAdmin} />
     );
   }
 
