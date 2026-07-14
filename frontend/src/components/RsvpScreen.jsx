@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 
 const NOME1 = 'Bruno';
 const NOME2 = 'Carol';
-const DATA_EVENTO = 'Sábado, 14 de Junho de 2025';
-const HORA_EVENTO = '16h às 20h';
+const DATA_EVENTO = 'Sábado, 05 de Setembro de 2026';
+const HORA_EVENTO = '14h às 22h';
 const LOCAL_EVENTO = 'Rua das Flores, 123 — Jardins, SP';
 
 const Sprig = () => (

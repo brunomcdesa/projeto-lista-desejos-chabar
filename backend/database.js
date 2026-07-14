@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const dataDir = path.join(__dirname, 'data');
+const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
 const dbPath = path.join(dataDir, 'db.json');
 const guestsPath = path.join(dataDir, 'guests.json');
 
