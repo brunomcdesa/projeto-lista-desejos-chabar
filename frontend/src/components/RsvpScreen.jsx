@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { hasSurname, formatName } from '../guestKey.js';
 
 const NOME1 = 'Bruno';
 const NOME2 = 'Carol';
@@ -74,20 +75,23 @@ export default function RsvpScreen({ onConfirmed }) {
 
   const handleSubmit = async () => {
     if (!name.trim()) { setNameErr('Por favor, informe seu nome.'); return; }
+    if (!hasSurname(name)) { setNameErr('Informe nome e sobrenome (ex.: Maria Silva).'); return; }
+    const displayName = formatName(name);
     setNameErr('');
     setLoading(true);
     try {
       const res = await fetch('/api/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), companions, compNames, message }),
+        body: JSON.stringify({ name: displayName, companions, compNames, message }),
       });
       if (res.ok || res.status === 409) {
-        localStorage.setItem('chabar_rsvp', JSON.stringify({ name: name.trim(), confirmedAt: new Date().toISOString() }));
+        localStorage.setItem('chabar_rsvp', JSON.stringify({ name: displayName, confirmedAt: new Date().toISOString() }));
         setSuccess(true);
-        setTimeout(() => onConfirmed(name.trim()), 2300);
+        setTimeout(() => onConfirmed(displayName), 2300);
       } else {
-        setNameErr('Ocorreu um erro. Tente novamente.');
+        const body = await res.json().catch(() => null);
+        setNameErr(body?.error || 'Ocorreu um erro. Tente novamente.');
       }
     } catch {
       setNameErr('Ocorreu um erro. Verifique sua conexão e tente novamente.');
@@ -133,7 +137,7 @@ export default function RsvpScreen({ onConfirmed }) {
               className={`field-input${nameErr ? ' error' : ''}`}
               value={name}
               onChange={(e) => { setName(e.target.value); setNameErr(''); }}
-              placeholder="Como prefere ser chamado/a"
+              placeholder="Nome e sobrenome"
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             />
             {nameErr && <span className="field-err">{nameErr}</span>}

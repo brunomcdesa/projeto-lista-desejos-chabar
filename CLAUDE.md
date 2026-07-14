@@ -54,9 +54,9 @@ The project is split into two independent npm workspaces managed from the root v
 
 **Item data model:**
 ```
-{ id, name, description, category, quantity, quantityReceived, purchased }
+{ id, name, description, category, quantity, quantityReceived, reservations, purchased }
 ```
-`purchased` is derived (`quantityReceived >= quantity`) and recalculated on every write.
+`purchased` is derived (`quantityReceived >= quantity`) and recalculated on every write. `reservations` is an array of guest keys (one entry per reserved unit; `null` = anonymous/admin-added), and `quantityReceived` always equals `reservations.length`. The guest key is a SHA-256 hash of the normalized RSVP name (`frontend/src/guestKey.js`), stored in localStorage as `chabar_guest_key` and sent via the `x-guest-key` header — so re-confirming the same name on another device recovers the guest's reservations. An optional `x-guest-key-legacy` header on GET `/api/items` migrates reservations made under the pre-name-hash random UUID keys. The API never returns `reservations` — public routes return a derived `reservedByMe` boolean instead, so the admin panel cannot see who reserved what. RSVP POST also dedupes by normalized name (returns 409 with the existing guest).
 
 **API routes summary:**
 | Method | Path | Auth |

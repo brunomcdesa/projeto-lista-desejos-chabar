@@ -19,18 +19,33 @@ function adminAuth(req, res, next) {
   next();
 }
 
+// Nunca expõe a lista de reservas — apenas se o próprio convidado reservou
+function publicItem(item, guestKey) {
+  const { reservations, ...rest } = item;
+  rest.reservedByMe = Boolean(guestKey) && (reservations || []).includes(guestKey);
+  return rest;
+}
+
 app.get('/api/items', (req, res) => {
   const { category } = req.query;
+  const guestKey = req.headers['x-guest-key'] || null;
+  const legacyKey = req.headers['x-guest-key-legacy'];
+  if (guestKey && legacyKey) db.rekeyGuest(legacyKey, guestKey);
   let items = db.getAll();
   if (category) items = items.filter((i) => i.category === category);
-  res.json(items);
+  res.json(items.map((i) => publicItem(i, guestKey)));
 });
 
 app.patch('/api/items/:id/toggle', (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const updated = db.toggle(id);
-  if (!updated) return res.status(404).json({ error: 'Item não encontrado' });
-  res.json(updated);
+  const guestKey = req.headers['x-guest-key'];
+  if (!guestKey) return res.status(400).json({ error: 'Identificação do convidado ausente' });
+  const result = db.toggle(id, guestKey);
+  if (!result) return res.status(404).json({ error: 'Item não encontrado' });
+  if (result.soldOut) {
+    return res.status(409).json({ error: 'Todos já reservados', item: publicItem(result.item, guestKey) });
+  }
+  res.json(publicItem(result.item, guestKey));
 });
 
 app.get('/api/admin/verify', adminAuth, (_req, res) => {
@@ -41,14 +56,14 @@ app.post('/api/items', adminAuth, (req, res) => {
   const { name, category } = req.body;
   if (!name || !category) return res.status(400).json({ error: 'name e category são obrigatórios' });
   const item = db.create(req.body);
-  res.status(201).json(item);
+  res.status(201).json(publicItem(item, null));
 });
 
 app.put('/api/items/:id', adminAuth, (req, res) => {
   const id = parseInt(req.params.id, 10);
   const updated = db.update(id, req.body);
   if (!updated) return res.status(404).json({ error: 'Item não encontrado' });
-  res.json(updated);
+  res.json(publicItem(updated, null));
 });
 
 app.delete('/api/items/:id', adminAuth, (req, res) => {
@@ -61,6 +76,7 @@ app.delete('/api/items/:id', adminAuth, (req, res) => {
 app.post('/api/rsvp', (req, res) => {
   const { name, phone, companions, compNames, message } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
+  if (!db.hasSurname(name)) return res.status(400).json({ error: 'Informe nome e sobrenome (ex.: Maria Silva).' });
   const result = db.addGuest({ name, phone, companions, compNames, message });
   if (result.duplicate) return res.status(409).json({ duplicate: true, guest: result.guest });
   res.status(201).json(result.guest);

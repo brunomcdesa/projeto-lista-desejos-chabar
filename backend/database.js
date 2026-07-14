@@ -85,6 +85,12 @@ function migrate(items) {
       patch.quantityReceived = item.purchased ? (item.quantity ?? 1) : 0;
       changed = true;
     }
+    if (!Array.isArray(item.reservations)) {
+      // Reservas antigas não têm dono conhecido — entram como anônimas (null)
+      const received = patch.quantityReceived ?? item.quantityReceived ?? 0;
+      patch.reservations = Array.from({ length: received }, () => null);
+      changed = true;
+    }
     return { ...item, ...patch };
   });
   if (changed) save(result);
@@ -105,22 +111,27 @@ function init() {
   save(items);
 }
 
-function toggle(id) {
-  const items = load();
+function toggle(id, guestKey) {
+  const items = migrate(load());
   const idx = items.findIndex((i) => i.id === id);
   if (idx === -1) return null;
   const item = items[idx];
   const qty = item.quantity ?? 1;
-  const current = item.quantityReceived ?? (item.purchased ? qty : 0);
 
-  if (current >= qty) {
-    items[idx].quantityReceived = Math.max(0, current - 1);
+  const pos = item.reservations.indexOf(guestKey);
+  if (pos !== -1) {
+    // Já reservou este item: cancela a própria reserva
+    item.reservations.splice(pos, 1);
+  } else if (item.reservations.length < qty) {
+    item.reservations.push(guestKey);
   } else {
-    items[idx].quantityReceived = current + 1;
+    return { soldOut: true, item };
   }
-  items[idx].purchased = items[idx].quantityReceived >= qty;
+
+  item.quantityReceived = item.reservations.length;
+  item.purchased = item.quantityReceived >= qty;
   save(items);
-  return items[idx];
+  return { item };
 }
 
 function create(data) {
@@ -133,6 +144,7 @@ function create(data) {
     category: data.category,
     quantity: data.quantity ?? 1,
     quantityReceived: 0,
+    reservations: [],
     purchased: false,
   };
   items.push(item);
@@ -141,14 +153,39 @@ function create(data) {
 }
 
 function update(id, data) {
-  const items = load();
+  const items = migrate(load());
   const idx = items.findIndex((i) => i.id === id);
   if (idx === -1) return null;
   const fields = ['name', 'description', 'category', 'quantity', 'quantityReceived'];
   fields.forEach((f) => { if (data[f] !== undefined) items[idx][f] = data[f]; });
+
+  // Ajuste manual do admin: remove reservas anônimas primeiro, preservando as dos convidados
+  const target = Math.max(0, items[idx].quantityReceived ?? 0);
+  const reservations = items[idx].reservations;
+  while (reservations.length > target) {
+    const anonIdx = reservations.indexOf(null);
+    reservations.splice(anonIdx !== -1 ? anonIdx : reservations.length - 1, 1);
+  }
+  while (reservations.length < target) reservations.push(null);
+  items[idx].quantityReceived = reservations.length;
+
   items[idx].purchased = (items[idx].quantityReceived ?? 0) >= (items[idx].quantity ?? 1);
   save(items);
   return items[idx];
+}
+
+// Migra reservas feitas com a chave aleatória antiga para a chave derivada do nome
+function rekeyGuest(oldKey, newKey) {
+  if (!oldKey || !newKey || oldKey === newKey) return;
+  const items = migrate(load());
+  let changed = false;
+  for (const item of items) {
+    item.reservations = item.reservations.map((k) => {
+      if (k === oldKey) { changed = true; return newKey; }
+      return k;
+    });
+  }
+  if (changed) save(items);
 }
 
 function remove(id) {
@@ -184,6 +221,36 @@ function migrateGuests(guests) {
   return result;
 }
 
+const CONNECTIVES = new Set(['da', 'de', 'do', 'das', 'dos', 'e']);
+
+function normalizeName(name) {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+function hasSurname(name) {
+  const words = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter((w) => /\p{L}{2,}/u.test(w) && !CONNECTIVES.has(w.toLowerCase()));
+  return words.length >= 2;
+}
+
+// Padroniza para formato t\u00edtulo: "bruno DA silva" -> "Bruno da Silva"
+function formatName(name) {
+  return name
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .split(' ')
+    .map((w) => (CONNECTIVES.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ');
+}
+
 function addGuest(data) {
   const guests = loadGuests();
   const phone = data.phone?.trim() || '';
@@ -191,10 +258,12 @@ function addGuest(data) {
     const existing = guests.find((g) => g.phone === phone);
     if (existing) return { duplicate: true, guest: existing };
   }
+  const sameName = guests.find((g) => normalizeName(g.name) === normalizeName(data.name));
+  if (sameName) return { duplicate: true, guest: sameName };
   const maxId = guests.reduce((max, g) => Math.max(max, g.id), 0);
   const guest = {
     id: maxId + 1,
-    name: data.name.trim(),
+    name: formatName(data.name),
     phone,
     companions: Math.max(0, Number(data.companions) || 0),
     compNames: Array.isArray(data.compNames) ? data.compNames.filter(Boolean) : [],
@@ -206,4 +275,4 @@ function addGuest(data) {
   return { duplicate: false, guest };
 }
 
-module.exports = { init, getAll, toggle, create, update, remove, getAllGuests, addGuest, migrateGuests };
+module.exports = { init, getAll, toggle, create, update, remove, rekeyGuest, getAllGuests, addGuest, migrateGuests, hasSurname };

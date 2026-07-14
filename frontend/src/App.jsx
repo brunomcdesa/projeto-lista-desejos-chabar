@@ -5,6 +5,7 @@ import GiftList from './components/GiftList.jsx';
 import AdminLogin from './components/AdminLogin.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import RsvpScreen from './components/RsvpScreen.jsx';
+import { resolveGuestKey } from './guestKey.js';
 
 const CATEGORIES = ['Todos', 'Cozinha', 'Mesa Posta', 'Banheiro', 'Quarto', 'Lavanderia'];
 
@@ -50,6 +51,7 @@ function getStoredRsvp() {
   }
 }
 
+
 export default function App() {
   const { isAdminRoute, adminPassword, login, logout, exitAdmin } = useAdminMode();
 
@@ -61,33 +63,59 @@ export default function App() {
   const [loading, setLoading]             = useState(true);
   const [byMe, setByMe]                   = useState(() => new Set());
   const [toast, setToast]                 = useState(null);
+  const [guestKey, setGuestKey]           = useState(null);
 
   useEffect(() => {
     if (isAdminRoute) return;
     if (view !== 'gifts') return;
+    let cancelled = false;
     setLoading(true);
-    fetch('/api/items')
-      .then((r) => r.json())
-      .then((data) => setItems(data))
-      .finally(() => setLoading(false));
+    (async () => {
+      const { key, legacy } = await resolveGuestKey();
+      const headers = { 'x-guest-key': key };
+      if (legacy) headers['x-guest-key-legacy'] = legacy;
+      const res = await fetch('/api/items', { headers });
+      const data = await res.json();
+      if (cancelled) return;
+      localStorage.setItem('chabar_guest_key', key);
+      setGuestKey(key);
+      setItems(data);
+      setByMe(new Set(data.filter((i) => i.reservedByMe).map((i) => i.id)));
+    })()
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [isAdminRoute, view]);
 
-  const handleToggle = async (id) => {
-    const wasReservedByMe = byMe.has(id);
-    const res = await fetch(`/api/items/${id}/toggle`, { method: 'PATCH' });
-    if (!res.ok) return;
-    const updated = await res.json();
-    const item = items.find((i) => i.id === id);
-    setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+  const applyItem = (updated) => {
+    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
     setByMe((prev) => {
       const next = new Set(prev);
-      wasReservedByMe ? next.delete(id) : next.add(id);
+      updated.reservedByMe ? next.add(updated.id) : next.delete(updated.id);
       return next;
     });
+  };
+
+  const handleToggle = async (id) => {
+    if (!guestKey) return;
+    const wasReservedByMe = byMe.has(id);
+    const itemName = items.find((i) => i.id === id)?.name;
+    const res = await fetch(`/api/items/${id}/toggle`, {
+      method: 'PATCH',
+      headers: { 'x-guest-key': guestKey },
+    });
+    const body = await res.json().catch(() => null);
+    if (res.status === 409) {
+      if (body?.item) applyItem(body.item);
+      setToast(`Ops! "${itemName}" acabou de ser totalmente reservado.`);
+      return;
+    }
+    if (!res.ok || !body) return;
+    applyItem(body);
     setToast(
       wasReservedByMe
-        ? `Reserva de "${item?.name}" cancelada.`
-        : `🎁 "${item?.name}" reservado!`
+        ? `Reserva de "${itemName}" cancelada.`
+        : `🎁 "${itemName}" reservado!`
     );
   };
 

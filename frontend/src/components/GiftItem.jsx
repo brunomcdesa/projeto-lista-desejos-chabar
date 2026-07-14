@@ -20,7 +20,7 @@ export default function GiftItem({ item, isMine, onToggle }) {
   const availText = soldOut
     ? 'Todos reservados'
     : isMine
-      ? `Você reservou · ${Math.max(0, available - 1)} restante${available - 1 !== 1 ? 's' : ''}`
+      ? `Você reservou · ${available} restante${available !== 1 ? 's' : ''}`
       : `${available} de ${qty} disponível${available !== 1 ? 'is' : ''}`;
 
   const btnLabel = isMine
