@@ -9,6 +9,9 @@ import { resolveGuestKey } from './guestKey.js';
 
 const CATEGORIES = ['Todos', 'Cozinha', 'Mesa Posta', 'Banheiro', 'Quarto', 'Lavanderia'];
 
+const normalize = (s) =>
+  (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
 function Toast({ msg, onDone }) {
   const [out, setOut] = useState(false);
   useEffect(() => {
@@ -60,6 +63,7 @@ export default function App() {
 
   const [items, setItems]                 = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [searchQuery, setSearchQuery]     = useState('');
   const [loading, setLoading]             = useState(true);
   const [byMe, setByMe]                   = useState(() => new Set());
   const [toast, setToast]                 = useState(null);
@@ -119,13 +123,19 @@ export default function App() {
     );
   };
 
-  const filtered = useMemo(
-    () =>
+  const filtered = useMemo(() => {
+    let result =
       selectedCategory === 'Todos'
         ? items
-        : items.filter((i) => i.category === selectedCategory),
-    [items, selectedCategory]
-  );
+        : items.filter((i) => i.category === selectedCategory);
+    const q = normalize(searchQuery.trim());
+    if (q) {
+      result = result.filter((i) =>
+        [i.name, i.description, i.category].some((f) => normalize(f).includes(q))
+      );
+    }
+    return result;
+  }, [items, selectedCategory, searchQuery]);
 
   const totalReceived = items.reduce((s, i) => s + (i.quantityReceived ?? 0), 0);
   const totalQuantity = items.reduce((s, i) => s + (i.quantity ?? 1), 0);
@@ -157,13 +167,32 @@ export default function App() {
         selected={selectedCategory}
         onSelect={setSelectedCategory}
       />
+      <div className="search-wrap">
+        <input
+          type="search"
+          className="search-input"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar presente..."
+          aria-label="Buscar presente"
+        />
+      </div>
       <div className="gifts-wrap">
         {loading ? (
           <p style={{ color: 'var(--muted)', textAlign: 'center', marginTop: '3rem' }}>
             Carregando lista...
           </p>
         ) : (
-          <GiftList items={filtered} byMe={byMe} onToggle={handleToggle} />
+          <GiftList
+            items={filtered}
+            byMe={byMe}
+            onToggle={handleToggle}
+            emptyMessage={
+              searchQuery.trim()
+                ? 'Nenhum presente encontrado para sua busca.'
+                : 'Nenhum item nesta categoria.'
+            }
+          />
         )}
       </div>
       {toast && <Toast key={toast} msg={toast} onDone={() => setToast(null)} />}

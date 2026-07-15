@@ -1,10 +1,10 @@
 import GiftItem from './GiftItem.jsx';
 
-export default function GiftList({ items, byMe, onToggle }) {
+export default function GiftList({ items, byMe, onToggle, emptyMessage = 'Nenhum item nesta categoria.' }) {
   if (items.length === 0) {
     return (
       <p style={{ color: 'var(--muted)', textAlign: 'center', marginTop: '3rem' }}>
-        Nenhum item nesta categoria.
+        {emptyMessage}
       </p>
     );
   }

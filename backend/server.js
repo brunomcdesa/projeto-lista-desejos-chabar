@@ -6,6 +6,12 @@ const db = require('./database');
 const app = express();
 const PORT = process.env.PORT || 3001;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '123456';
+// Confirmações abertas até 15/08/2026 (inclusive), horário de Brasília
+const RSVP_DEADLINE = process.env.RSVP_DEADLINE || '2026-08-16T00:00:00-03:00';
+
+function rsvpOpen() {
+  return new Date() < new Date(RSVP_DEADLINE);
+}
 
 db.init();
 
@@ -73,7 +79,17 @@ app.delete('/api/items/:id', adminAuth, (req, res) => {
   res.json({ success: true });
 });
 
+app.get('/api/rsvp/status', (_req, res) => {
+  res.json({ open: rsvpOpen(), deadline: RSVP_DEADLINE });
+});
+
 app.post('/api/rsvp', (req, res) => {
+  if (!rsvpOpen()) {
+    return res.status(403).json({
+      error: 'As confirmações de presença se encerraram em 15/08/2026.',
+      deadlineExpired: true,
+    });
+  }
   const { name, phone, companions, compNames, message } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
   if (!db.hasSurname(name)) return res.status(400).json({ error: 'Informe nome e sobrenome (ex.: Maria Silva).' });

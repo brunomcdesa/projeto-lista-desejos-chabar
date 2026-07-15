@@ -57,6 +57,14 @@ export default function RsvpScreen({ onConfirmed }) {
   const [loading, setLoading]       = useState(false);
   const [nameErr, setNameErr]       = useState('');
   const [success, setSuccess]       = useState(false);
+  const [rsvpClosed, setRsvpClosed] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/rsvp/status')
+      .then((res) => res.json())
+      .then((status) => { if (status.open === false) setRsvpClosed(true); })
+      .catch(() => {});
+  }, []);
 
   const changeCompanions = (delta) => {
     setCompanions((c) => {
@@ -91,7 +99,11 @@ export default function RsvpScreen({ onConfirmed }) {
         setTimeout(() => onConfirmed(displayName), 2300);
       } else {
         const body = await res.json().catch(() => null);
-        setNameErr(body?.error || 'Ocorreu um erro. Tente novamente.');
+        if (res.status === 403 && body?.deadlineExpired) {
+          setRsvpClosed(true);
+        } else {
+          setNameErr(body?.error || 'Ocorreu um erro. Tente novamente.');
+        }
       }
     } catch {
       setNameErr('Ocorreu um erro. Verifique sua conexão e tente novamente.');
@@ -121,6 +133,21 @@ export default function RsvpScreen({ onConfirmed }) {
         </div>
       </div>
 
+      {rsvpClosed ? (
+        <div className="form-section">
+          <div className="form-card rsvp-closed">
+            <GoldDivider />
+            <p className="rsvp-closed-icon">🗓️</p>
+            <h2 className="rsvp-closed-title">Confirmações encerradas</h2>
+            <p className="rsvp-closed-text">
+              O prazo para confirmar presença se encerrou em <strong>15/08/2026</strong>.
+              <br />
+              Se precisar de ajuda, entre em contato com {NOME1} e {NOME2}.
+            </p>
+            <GoldDivider />
+          </div>
+        </div>
+      ) : (
       <div className="form-section">
         <p className="form-intro">
           Confirme sua presença abaixo e explore nossa lista de presentes 🏡
@@ -194,6 +221,7 @@ export default function RsvpScreen({ onConfirmed }) {
           </button>
         </div>
       </div>
+      )}
 
       <div className="admin-link">
         <a href="?admin">Área do organizador →</a>

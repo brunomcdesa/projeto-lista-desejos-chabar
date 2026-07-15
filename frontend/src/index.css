@@ -330,6 +330,27 @@ button {
 .cat-pill:hover { border-color: var(--terra); color: var(--terra); }
 .cat-pill.active { background: var(--terra); border-color: var(--terra); color: white; }
 
+/* Search */
+.search-wrap { max-width: 960px; margin: 0 auto; padding: 10px 16px 0; }
+.search-input {
+  background: var(--cream); border: 1.5px solid var(--cream-dark);
+  border-radius: var(--r-full); padding: 11px 18px;
+  font-family: var(--font-sans); font-size: 14px; color: var(--brown);
+  outline: none; transition: border-color var(--t), box-shadow var(--t);
+  width: 100%; max-width: 380px; display: block;
+}
+.search-input:focus { border-color: var(--terra); box-shadow: 0 0 0 3px rgba(196, 120, 90, 0.15); }
+.search-input::placeholder { color: var(--gray); }
+
+/* RSVP encerrado */
+.rsvp-closed { text-align: center; }
+.rsvp-closed-icon { font-size: 2.2rem; }
+.rsvp-closed-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem; color: var(--brown);
+}
+.rsvp-closed-text { font-size: 14.5px; color: var(--brown-light); line-height: 1.7; }
+
 /* Gift Grid */
 .gifts-wrap { padding: 16px 14px 60px; max-width: 960px; margin: 0 auto; }
 .gifts-grid {
